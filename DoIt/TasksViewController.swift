@@ -12,12 +12,9 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     @IBOutlet weak var tableView: UITableView!
     var tasks: [Task] = []
-    var selectedIndex = -1
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        tasks = initTasks()
         tableView.dataSource = self
         tableView.delegate = self
     }
@@ -30,7 +27,7 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         let cell = UITableViewCell()
         let task = tasks[indexPath.row]
         if task.important {
-            cell.textLabel?.text = "❗️\(task.name)"
+            cell.textLabel?.text = "❗️\(task.name!)"
 
         } else {
             cell.textLabel?.text = task.name
@@ -38,26 +35,25 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         return cell
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        getTasks()
+        tableView.reloadData()
+    }
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        selectedIndex = indexPath.row
-        let task = tasks[selectedIndex]
+        let task = tasks[indexPath.row]
         performSegue(withIdentifier: "selectTaskSegue", sender: task)
     }
     
-    func initTasks() -> [Task] {
-        let task1 = Task()
-        task1.name = "Math Homework"
-        task1.important = true
-        
-        let task2 = Task()
-        task2.name = "Wash Dishes"
-        task2.important = false
-        
-        let task3 = Task()
-        task3.name = "Fix Washing Machine"
-        task3.important = true
-        
-        return [task1, task2, task3]
+
+    func getTasks() {
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        do {
+           tasks =  try context.fetch(Task.fetchRequest()) as! [Task]
+            print(tasks)
+        } catch {
+            print("Oops, we have en error")
+        }
     }
 
     @IBAction func plusTapped(_ sender: Any) {
@@ -65,13 +61,9 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if (segue.identifier == "addSegue" ) {
-        let nextVC = segue.destination as! CreateTaskViewController
-        nextVC.previousViewController = self
-        } else if (segue.identifier == "selectTaskSegue" ) {
+        if (segue.identifier == "selectTaskSegue" ) {
             let nextVC = segue.destination as! CompleteTaskViewController
             nextVC.task = sender as! Task
-            nextVC.previousViewController = self
         }
     }
 }
